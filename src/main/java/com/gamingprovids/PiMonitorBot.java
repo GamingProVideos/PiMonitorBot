@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.entities.Activity;
 
 import javax.security.auth.login.LoginException;
 import java.io.BufferedReader;
@@ -21,12 +22,9 @@ public class PiMonitorBot extends ListenerAdapter {
 
     // --- CONFIG ---
     private static final Dotenv dotenv = Dotenv.load();
-
     private static final String TOKEN = dotenv.get("BOT_TOKEN");
     private static final long GUILD_ID = Long.parseLong(dotenv.get("GUILD_ID"));
     private static final long CHANNEL_ID = Long.parseLong(dotenv.get("CHANNEL_ID"));
-
-    // Load dynamic settings from .env
     private static int intervalMinutes = Integer.parseInt(dotenv.get("INTERVAL_MINUTES", "5"));
     private static double warnThreshold = Double.parseDouble(dotenv.get("WARN_THRESHOLD", "70.0"));
 
@@ -55,9 +53,21 @@ public class PiMonitorBot extends ListenerAdapter {
         }
 
         TextChannel channel = event.getJDA().getTextChannelById(CHANNEL_ID);
-        if (channel != null) {
-            startAutoReporting(channel);
-        }
+        if (channel != null) startAutoReporting(channel);
+
+        // --- Update Discord Status every 1 minute ---
+        Timer statusTimer = new Timer();
+        statusTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                double tempC = getPiTemperature();
+                if (tempC > 0) {
+                    event.getJDA().getPresence().setActivity(
+                            Activity.watching(String.format("Pi Temp: %.1f°C", tempC))
+                    );
+                }
+            }
+        }, 0, 60 * 1000L);
     }
 
     @Override
@@ -68,8 +78,7 @@ public class PiMonitorBot extends ListenerAdapter {
                 double fanPercent = getFanPercentage();
                 String fanStr = (fanPercent >= 0) ? String.format("%.0f%%", fanPercent) : "Unknown";
 
-                event.reply(String.format("🌡️ Pi Temp: %.1f °C\n💨 Fan Speed: %s", tempC, fanStr))
-                        .queue();
+                event.reply(String.format("🌡️ Pi Temp: %.1f °C\n💨 Fan Speed: %s", tempC, fanStr)).queue();
             }
             case "setinterval" -> {
                 int minutes = event.getOption("minutes").getAsInt();
@@ -107,14 +116,10 @@ public class PiMonitorBot extends ListenerAdapter {
                 String fanStr = (fanPercent >= 0) ? String.format("%.0f%%", fanPercent) : "Unknown";
 
                 if (tempC > 0) {
-                    channel.sendMessage(
-                            String.format("🌡️ Auto Report: Pi Temp %.1f °C | 💨 Fan %s", tempC, fanStr)
-                    ).queue();
+                    channel.sendMessage(String.format("🌡️ Auto Report: Pi Temp %.1f °C | 💨 Fan %s", tempC, fanStr)).queue();
 
                     if (tempC >= warnThreshold) {
-                        channel.sendMessage(
-                                String.format("⚠️ WARNING: Pi Temp is high! (%.1f °C)", tempC)
-                        ).queue();
+                        channel.sendMessage(String.format("⚠️ WARNING: Pi Temp is high! (%.1f °C)", tempC)).queue();
                     }
                 }
             }
@@ -122,16 +127,13 @@ public class PiMonitorBot extends ListenerAdapter {
     }
 
     private void restartAutoReporting(TextChannel channel) {
-        if (timer != null) {
-            timer.cancel();
-        }
+        if (timer != null) timer.cancel();
         startAutoReporting(channel);
     }
 
-    // --- System reading ---
+    // --- System readings ---
     private double getPiTemperature() {
-        String path = "/sys/class/thermal/thermal_zone0/temp";
-        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+        try (BufferedReader br = new BufferedReader(new FileReader("/sys/class/thermal/thermal_zone0/temp"))) {
             String line = br.readLine();
             if (line != null) return Integer.parseInt(line) / 1000.0;
         } catch (IOException e) {
@@ -141,10 +143,8 @@ public class PiMonitorBot extends ListenerAdapter {
     }
 
     private double getFanPercentage() {
-        String curPath = "/sys/class/thermal/cooling_device0/cur_state";
-        String maxPath = "/sys/class/thermal/cooling_device0/max_state";
-        try (BufferedReader curReader = new BufferedReader(new FileReader(curPath));
-             BufferedReader maxReader = new BufferedReader(new FileReader(maxPath))) {
+        try (BufferedReader curReader = new BufferedReader(new FileReader("/sys/class/thermal/cooling_device0/cur_state"));
+             BufferedReader maxReader = new BufferedReader(new FileReader("/sys/class/thermal/cooling_device0/max_state"))) {
 
             String curLine = curReader.readLine();
             String maxLine = maxReader.readLine();
