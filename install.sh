@@ -6,14 +6,14 @@ BOT_DIR="$HOME/PiMonitorBot"
 mkdir -p "$BOT_DIR"
 cd "$BOT_DIR"
 
-# Install Zulu OpenJDK 21
+# Install Zulu OpenJDK 21 (ARM64)
 echo "Installing OpenJDK 21 (Zulu)..."
 if ! java -version 2>&1 | grep -q '21'; then
     # Add Azul repository key
     sudo mkdir -p /etc/apt/keyrings
     curl -fsSL https://repos.azul.com/azul-repo.key | sudo gpg --dearmor -o /etc/apt/keyrings/azul.gpg
 
-    # Add repository
+    # Add Zulu repository
     echo "deb [arch=arm64 signed-by=/etc/apt/keyrings/azul.gpg] https://repos.azul.com/zulu/deb stable main" | sudo tee /etc/apt/sources.list.d/zulu.list
 
     # Update and install
