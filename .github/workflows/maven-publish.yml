@@ -21,26 +21,23 @@ jobs:
       - name: Build with Maven
         run: mvn clean package
 
-      - name: Rename JAR to PiMonitorBot.jar
+      - name: Rename JAR
         run: mv target/PiMonitorBot-1.0-SNAPSHOT.jar target/PiMonitorBot.jar
 
-      - name: Upload JAR as artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: PiMonitorBot
           path: target/PiMonitorBot.jar
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: "PiMonitorBot ${{ github.run_number }}"
-          tag_name: "v${{ github.run_number }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Install GitHub CLI
+        run: sudo apt update && sudo apt install -y gh
 
-      - name: Upload JAR to Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: target/PiMonitorBot.jar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Authenticate GitHub CLI
+        run: gh auth setup-git && echo "${{ secrets.GH_TOKEN }}" | gh auth login --with-token
+
+      - name: Create or update release
+        run: |
+          TAG="v${{ github.run_number }}"
+          gh release create "$TAG" target/PiMonitorBot.jar --title "PiMonitorBot ${{ github.run_number }}" --notes "Automated release" || \
+          gh release upload "$TAG" target/PiMonitorBot.jar --clobber
