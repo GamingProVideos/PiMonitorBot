@@ -1,4 +1,3 @@
-##stuff
 name: Build PiMonitorBot
 
 on:
@@ -37,11 +36,11 @@ jobs:
           name: "PiMonitorBot ${{ github.run_number }}"
           tag_name: "v${{ github.run_number }}"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Upload JAR to Release
         uses: softprops/action-gh-release@v1
         with:
           files: target/PiMonitorBot.jar
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
