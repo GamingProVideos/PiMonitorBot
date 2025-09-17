@@ -21,14 +21,11 @@ jobs:
       - name: Build with Maven
         run: mvn clean package
 
-      - name: Rename JAR
-        run: mv target/PiMonitorBot-1.0-SNAPSHOT.jar target/PiMonitorBot.jar
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: PiMonitorBot
-          path: target/PiMonitorBot.jar
+          path: target/PiMonitorBot-1.0-SNAPSHOT.jar
 
       - name: Install GitHub CLI
         run: sudo apt update && sudo apt install -y gh
@@ -39,6 +36,6 @@ jobs:
         run: |
           TAG="v${{ github.run_number }}"
           REPO="${{ github.repository }}"
-          # Try to create release, if it exists, upload asset with clobber
-          gh release create "$TAG" target/PiMonitorBot.jar --repo "$REPO" --title "PiMonitorBot ${{ github.run_number }}" --notes "Automated release" --token "$GH_TOKEN" || \
-          gh release upload "$TAG" target/PiMonitorBot.jar --repo "$REPO" --clobber --token "$GH_TOKEN"
+          # Create release or upload JAR if release exists
+          gh release create "$TAG" target/PiMonitorBot-1.0-SNAPSHOT.jar --repo "$REPO" --title "PiMonitorBot ${{ github.run_number }}" --notes "Automated release" --token "$GH_TOKEN" || \
+          gh release upload "$TAG" target/PiMonitorBot-1.0-SNAPSHOT.jar --repo "$REPO" --clobber --token "$GH_TOKEN"
