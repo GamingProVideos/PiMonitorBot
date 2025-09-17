@@ -10,15 +10,15 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
-import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
 
 import javax.security.auth.login.LoginException;
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,7 +33,13 @@ public class PiMonitorBot extends ListenerAdapter {
     private static int intervalMinutes = Integer.parseInt(dotenv.get("INTERVAL_MINUTES", "5"));
     private static double warnThreshold = Double.parseDouble(dotenv.get("WARN_THRESHOLD", "70.0"));
 
+    // 🔹 Version control
+    private static final String CURRENT_VERSION = "1.0.0"; // bump manually when releasing
+    private static final String LATEST_VERSION_URL =
+            "https://raw.githubusercontent.com/GamingProVideos/PiMonitorBot/master/VERSION";
+
     private Timer timer;
+    private Message lastUpdateMessage = null;
 
     public static void main(String[] args) throws LoginException {
         JDABuilder.createDefault(TOKEN)
@@ -54,13 +60,15 @@ public class PiMonitorBot extends ListenerAdapter {
                             .addOption(OptionType.INTEGER, "minutes", "Interval in minutes", true),
                     Commands.slash("setwarn", "Set warning threshold in °C")
                             .addOption(OptionType.NUMBER, "temperature", "Temperature in °C", true),
-                    Commands.slash("status", "Show current settings")
+                    Commands.slash("status", "Show current settings"),
+                    Commands.slash("checkupdate", "Check if a new version of PiMonitorBot is available")
             ).queue();
         }
 
         TextChannel channel = event.getJDA().getTextChannelById(CHANNEL_ID);
         if (channel != null) {
             startAutoReporting(channel);
+            checkForUpdates(channel); // 🔹 Check for updates at startup
         }
     }
 
@@ -100,8 +108,16 @@ public class PiMonitorBot extends ListenerAdapter {
                         .setTitle("📊 Current Settings")
                         .addField("Interval", intervalMinutes + " minutes", true)
                         .addField("Warning Threshold", warnThreshold + " °C", true)
+                        .addField("Bot Version", CURRENT_VERSION, true)
                         .setColor(Color.BLUE);
                 event.replyEmbeds(embed.build()).queue();
+            }
+            case "checkupdate" -> {
+                TextChannel channel = event.getJDA().getTextChannelById(CHANNEL_ID);
+                if (channel != null) {
+                    checkForUpdates(channel);
+                    event.reply("🔍 Checking for updates...").setEphemeral(true).queue();
+                }
             }
         }
     }
@@ -131,6 +147,9 @@ public class PiMonitorBot extends ListenerAdapter {
                         channel.sendMessageEmbeds(warnEmbed.build()).queue();
                     }
                 }
+
+                // 🔹 Check for updates periodically (every auto-report cycle)
+                checkForUpdates(channel);
             }
         }, 0, intervalMinutes * 60 * 1000L);
     }
@@ -169,5 +188,33 @@ public class PiMonitorBot extends ListenerAdapter {
             e.printStackTrace();
         }
         return -1.0;
+    }
+
+    private void checkForUpdates(TextChannel channel) {
+        new Thread(() -> {
+            try {
+                HttpURLConnection conn = (HttpURLConnection) new URL(LATEST_VERSION_URL).openConnection();
+                conn.setRequestProperty("User-Agent", "PiMonitorBot");
+
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    String latestVersion = in.readLine().trim();
+
+                    if (latestVersion != null && !CURRENT_VERSION.equalsIgnoreCase(latestVersion)) {
+                        EmbedBuilder updateEmbed = new EmbedBuilder()
+                                .setTitle("🔄 Update Available")
+                                .setDescription("Running version **" + CURRENT_VERSION + "**\nLatest version is **" + latestVersion + "**\n\nUpdate here: [GitHub Repo](https://github.com/GamingProVideos/PiMonitorBot)")
+                                .setColor(Color.ORANGE);
+
+                        if (lastUpdateMessage == null) {
+                            channel.sendMessageEmbeds(updateEmbed.build()).queue(msg -> lastUpdateMessage = msg);
+                        } else {
+                            lastUpdateMessage.editMessageEmbeds(updateEmbed.build()).queue();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to check for updates: " + e.getMessage());
+            }
+        }).start();
     }
 }
