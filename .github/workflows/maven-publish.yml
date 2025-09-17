@@ -37,5 +37,5 @@ jobs:
           TAG="v${{ github.run_number }}"
           REPO="${{ github.repository }}"
           # Create release or upload JAR if release exists
-          gh release create "$TAG" target/PiMonitorBot-1.0-SNAPSHOT.jar --repo "$REPO" --title "PiMonitorBot ${{ github.run_number }}" --notes "Automated release" --token "$GH_TOKEN" || \
-          gh release upload "$TAG" target/PiMonitorBot-1.0-SNAPSHOT.jar --repo "$REPO" --clobber --token "$GH_TOKEN"
+          gh release create "$TAG" target/PiMonitorBot-1.0-SNAPSHOT.jar --repo "$REPO" --title "PiMonitorBot ${{ github.run_number }}" --notes "Automated release" || \
+          gh release upload "$TAG" target/PiMonitorBot-1.0-SNAPSHOT.jar --repo "$REPO" --clobber
