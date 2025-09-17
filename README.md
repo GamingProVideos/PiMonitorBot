@@ -38,3 +38,16 @@ chmod +x install.sh
 wget https://github.com/GamingProVideos/PiMonitorBot/raw/master/install.sh -O install.sh
 chmod +x install.sh
 ./install.sh
+
+
+To update the bot while keeping your configuration, use the update.sh script:
+
+# Using curl
+curl -sSL https://github.com/GamingProVideos/PiMonitorBot/raw/master/update.sh -o update.sh
+chmod +x update.sh
+./update.sh
+
+# Using wget
+wget https://github.com/GamingProVideos/PiMonitorBot/raw/master/update.sh -O update.sh
+chmod +x update.sh
+./update.sh
