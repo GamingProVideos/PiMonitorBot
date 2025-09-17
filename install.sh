@@ -6,16 +6,11 @@ BOT_DIR="$HOME/PiMonitorBot"
 mkdir -p "$BOT_DIR"
 cd "$BOT_DIR"
 
-# Install OpenJDK 21 via Adoptium
-echo "Installing OpenJDK 21 via Adoptium..."
-JDK_DIR="/opt/java21"
+# Install OpenJDK 21 via Zulu
+echo "Installing OpenJDK 21 (Zulu)..."
 if ! java -version 2>&1 | grep -q '21'; then
-    wget https://github.com/adoptium/temurin21-binaries/releases/latest/download/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.0_11.tar.gz -O OpenJDK21.tar.gz
-    sudo mkdir -p "$JDK_DIR"
-    sudo tar -xvf OpenJDK21.tar.gz -C "$JDK_DIR" --strip-components=1
-    rm OpenJDK21.tar.gz
-    echo "export PATH=$JDK_DIR/bin:\$PATH" >> ~/.bashrc
-    export PATH=$JDK_DIR/bin:$PATH
+    sudo apt update
+    sudo apt install -y zulu21-jdk-headless
 else
     echo "Java 21 is already installed."
 fi
