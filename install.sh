@@ -1,13 +1,15 @@
 #!/bin/bash
 set -e
 
-# Directory for bot
-BOT_DIR="$HOME/PiMonitorBot"
+echo "=== PiMonitorBot Installer ==="
+
+# Prompt for installation directory
+read -p "Enter installation directory (default: $HOME/PiMonitorBot): " BOT_DIR
+BOT_DIR=${BOT_DIR:-$HOME/PiMonitorBot}
 mkdir -p "$BOT_DIR"
 cd "$BOT_DIR"
 
-# Install Zulu OpenJDK 21 (ARM64)
-echo "Installing OpenJDK 21 (Zulu)..."
+echo "Installing Zulu OpenJDK 21 (if not already installed)..."
 if ! java -version 2>&1 | grep -q '21'; then
     # Add Azul repository key
     sudo mkdir -p /etc/apt/keyrings
@@ -23,10 +25,9 @@ else
     echo "Java 21 is already installed."
 fi
 
-# Verify Java
 java -version
 
-# Download latest prebuilt JAR from GitHub release
+# Download the bot JAR
 JAR_URL="https://github.com/GamingProVideos/PiMonitorBot/releases/latest/download/PiMonitorBot-1.0-SNAPSHOT.jar"
 echo "Downloading PiMonitorBot.jar..."
 wget -O PiMonitorBot.jar "$JAR_URL"
@@ -42,8 +43,8 @@ INTERVAL_MINUTES=${INTERVAL_MINUTES:-5}
 read -p "Enter WARN_THRESHOLD (default 70.0): " WARN_THRESHOLD
 WARN_THRESHOLD=${WARN_THRESHOLD:-70.0}
 
-# Create .env file using variable references
-cat > .env <<'EOF'
+# Create .env
+cat > .env <<EOF
 BOT_TOKEN=$BOT_TOKEN
 GUILD_ID=$GUILD_ID
 CHANNEL_ID=$CHANNEL_ID
@@ -51,18 +52,16 @@ INTERVAL_MINUTES=$INTERVAL_MINUTES
 WARN_THRESHOLD=$WARN_THRESHOLD
 EOF
 
-echo ".env created with variable references."
+echo ".env created."
 
-# Create bot.sh to start the bot with auto-restart
-cat > bot.sh << 'EOF'
+# Create bot.sh with absolute paths
+cat > bot.sh <<EOF
 #!/bin/bash
-cd "$(dirname "$0")"
-
-# Load environment variables
-export $(grep -v '^#' .env | xargs)
+cd "$BOT_DIR"
+export \$(grep -v '^#' .env | xargs)
 
 while true; do
-    java -jar PiMonitorBot.jar
+    java -jar "$BOT_DIR/PiMonitorBot.jar"
     echo "Bot crashed. Restarting in 5 seconds..."
     sleep 5
 done
@@ -71,7 +70,7 @@ EOF
 chmod +x bot.sh
 echo "bot.sh created and made executable."
 
-# Set up systemd service
+# Create systemd service
 SERVICE_FILE="/etc/systemd/system/pimonitorbot.service"
 sudo bash -c "cat > $SERVICE_FILE" <<EOF
 [Unit]
@@ -94,6 +93,6 @@ sudo systemctl daemon-reload
 sudo systemctl enable pimonitorbot
 sudo systemctl start pimonitorbot
 
-echo "PiMonitorBot systemd service installed and started!"
+echo "PiMonitorBot installation complete!"
 echo "Check status: sudo systemctl status pimonitorbot"
 echo "Manual start: $BOT_DIR/bot.sh"
