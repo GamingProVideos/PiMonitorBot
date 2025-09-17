@@ -6,10 +6,28 @@ BOT_DIR="$HOME/PiMonitorBot"
 mkdir -p "$BOT_DIR"
 cd "$BOT_DIR"
 
+# Install OpenJDK 21 via Adoptium
+echo "Installing OpenJDK 21 via Adoptium..."
+JDK_DIR="/opt/java21"
+if ! java -version 2>&1 | grep -q '21'; then
+    wget https://github.com/adoptium/temurin21-binaries/releases/latest/download/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.0_11.tar.gz -O OpenJDK21.tar.gz
+    sudo mkdir -p "$JDK_DIR"
+    sudo tar -xvf OpenJDK21.tar.gz -C "$JDK_DIR" --strip-components=1
+    rm OpenJDK21.tar.gz
+    echo "export PATH=$JDK_DIR/bin:\$PATH" >> ~/.bashrc
+    export PATH=$JDK_DIR/bin:$PATH
+else
+    echo "Java 21 is already installed."
+fi
+
+# Verify Java
+java -version
+
 # Download latest prebuilt JAR from GitHub release
 JAR_URL="https://github.com/GamingProVideos/PiMonitorBot/releases/latest/download/PiMonitorBot-1.0-SNAPSHOT.jar"
 echo "Downloading PiMonitorBot.jar..."
 wget -O PiMonitorBot.jar "$JAR_URL"
+chmod +x PiMonitorBot.jar
 
 # Prompt user for configuration variables
 echo "Let's configure your PiMonitorBot:"
@@ -41,9 +59,9 @@ cd "$(dirname "$0")"
 export $(grep -v '^#' .env | xargs)
 
 while true; do
-  java -jar PiMonitorBot.jar
-  echo "Bot crashed. Restarting in 5 seconds..."
-  sleep 5
+    java -jar PiMonitorBot.jar
+    echo "Bot crashed. Restarting in 5 seconds..."
+    sleep 5
 done
 EOF
 
