@@ -25,7 +25,7 @@ jobs:
         run: mv target/PiMonitorBot-1.0-SNAPSHOT.jar target/PiMonitorBot.jar
 
       - name: Upload JAR as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: PiMonitorBot
           path: target/PiMonitorBot.jar
