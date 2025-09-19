@@ -7,7 +7,7 @@
 
     <groupId>com.gamingprovids</groupId>
     <artifactId>PiMonitorBot</artifactId>
-    <version></version>
+    <version>1.0.1</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
