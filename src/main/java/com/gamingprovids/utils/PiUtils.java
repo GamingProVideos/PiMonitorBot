@@ -13,13 +13,34 @@ public class PiUtils {
     /**
      * Reads the Raspberry Pi CPU temperature in °C.
      *
-     * @return temperature in Celsius, or -1.0 if unable to read
+     * @return CPU temperature in Celsius, or -1.0 if unable to read
      */
-    public static double getPiTemperature() {
+    public static double getCpuTemperature() {
         String path = "/sys/class/thermal/thermal_zone0/temp";
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             String line = br.readLine();
             if (line != null) return Integer.parseInt(line) / 1000.0;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return -1.0;
+    }
+
+    /**
+     * Reads the Raspberry Pi GPU temperature in °C using vcgencmd.
+     *
+     * @return GPU temperature in Celsius, or -1.0 if unable to read
+     */
+    public static double getGpuTemperature() {
+        try {
+            Process process = new ProcessBuilder("vcgencmd", "measure_temp").start();
+            try (BufferedReader br = new BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
+                String line = br.readLine(); // e.g., temp=48.2'C
+                if (line != null && line.startsWith("temp=")) {
+                    line = line.replace("temp=", "").replace("'C", "");
+                    return Double.parseDouble(line);
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

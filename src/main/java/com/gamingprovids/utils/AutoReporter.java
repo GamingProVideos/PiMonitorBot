@@ -3,6 +3,7 @@ package com.gamingprovids.utils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.Message;
 
 import java.awt.*;
 import java.util.Timer;
@@ -10,6 +11,7 @@ import java.util.TimerTask;
 
 public class AutoReporter {
     private static Timer timer;
+    private Message lastReportMessage = null;
     private final JDA jda;
 
     public AutoReporter(JDA jda) {
@@ -24,22 +26,28 @@ public class AutoReporter {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                double tempC = PiUtils.getPiTemperature();
+                double cpuTemp = PiUtils.getCpuTemperature();
+                double gpuTemp = PiUtils.getGpuTemperature();
                 double fanPercent = PiUtils.getFanPercentage();
 
                 EmbedBuilder embed = new EmbedBuilder()
                         .setTitle("🌡️ Auto Report")
-                        .addField("Temperature", String.format("%.1f °C", tempC), true)
+                        .addField("CPU Temperature", String.format("%.1f °C", cpuTemp), true)
+                        .addField("GPU Temperature", String.format("%.1f °C", gpuTemp), true)
                         .addField("Fan Speed", (fanPercent >= 0 ? String.format("%.0f%%", fanPercent) : "Unknown"), true)
-                        .setColor(tempC >= Config.getWarnThreshold() ? Color.RED : Color.GREEN);
+                        .setColor(cpuTemp >= Config.getWarnThreshold() ? Color.RED : Color.GREEN);
 
-                if (tempC > 0) {
-                    channel.sendMessageEmbeds(embed.build()).queue();
+                if (cpuTemp > 0) {
+                    if (lastReportMessage == null) {
+                        channel.sendMessageEmbeds(embed.build()).queue(msg -> lastReportMessage = msg);
+                    } else {
+                        lastReportMessage.editMessageEmbeds(embed.build()).queue();
+                    }
 
-                    if (tempC >= Config.getWarnThreshold()) {
+                    if (cpuTemp >= Config.getWarnThreshold()) {
                         EmbedBuilder warnEmbed = new EmbedBuilder()
                                 .setTitle("⚠️ WARNING")
-                                .setDescription(String.format("Pi Temp is high! (%.1f °C)", tempC))
+                                .setDescription(String.format("Pi CPU Temp is high! (%.1f °C)", cpuTemp))
                                 .setColor(Color.RED);
                         channel.sendMessageEmbeds(warnEmbed.build()).queue();
                     }

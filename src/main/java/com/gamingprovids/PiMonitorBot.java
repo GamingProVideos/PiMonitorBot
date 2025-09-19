@@ -4,13 +4,17 @@ import com.gamingprovids.commands.*;
 import com.gamingprovids.utils.Config;
 import com.gamingprovids.utils.AutoReporter;
 import com.gamingprovids.utils.UpdateChecker;
+import com.gamingprovids.utils.PiUtils;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.entities.Guild;
 
 import javax.security.auth.login.LoginException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class PiMonitorBot extends ListenerAdapter {
 
@@ -20,7 +24,7 @@ public class PiMonitorBot extends ListenerAdapter {
     public static void main(String[] args) throws LoginException {
         JDABuilder.createDefault(Config.getToken())
                 .addEventListeners(new PiMonitorBot())
-                .setActivity(Activity.playing("Temp Monitor"))
+                .setStatus(OnlineStatus.DO_NOT_DISTURB)
                 .build();
     }
 
@@ -45,5 +49,17 @@ public class PiMonitorBot extends ListenerAdapter {
 
         updateChecker = new UpdateChecker(event.getJDA());
         updateChecker.checkForUpdates();
+
+        // 🔹 Update activity with CPU & GPU temps every 30 seconds
+        new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                double cpuTemp = PiUtils.getCpuTemperature();
+                double gpuTemp = PiUtils.getGpuTemperature();
+                event.getJDA().getPresence().setActivity(
+                        Activity.watching(String.format("CPU: %.1f°C | GPU: %.1f°C", cpuTemp, gpuTemp))
+                );
+            }
+        }, 0, 30 * 1000L); // every 30 seconds
     }
 }
