@@ -24,7 +24,6 @@ public class PiMonitorBot extends ListenerAdapter {
     public static void main(String[] args) throws LoginException {
         JDABuilder.createDefault(Config.getToken())
                 .addEventListeners(new PiMonitorBot())
-                .setStatus(OnlineStatus.DO_NOT_DISTURB)
                 .build();
     }
 
