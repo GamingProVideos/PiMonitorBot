@@ -7,26 +7,30 @@ import java.io.InputStreamReader;
 
 public class PiUtils {
 
-    private PiUtils() { }
+    private PiUtils() {
+        // private constructor to prevent instantiation
+    }
 
     /**
      * Reads the Raspberry Pi CPU temperature in °C.
-     * @return CPU temperature, or -1.0 if unavailable.
+     *
+     * @return CPU temperature in Celsius, or -1.0 if unable to read
      */
     public static double getCpuTemperature() {
         String path = "/sys/class/thermal/thermal_zone0/temp";
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             String line = br.readLine();
-            if (line != null) return Integer.parseInt(line.trim()) / 1000.0;
-        } catch (IOException | NumberFormatException e) {
-            System.err.println("⚠️ Failed to read CPU temperature: " + e.getMessage());
+            if (line != null) return Integer.parseInt(line) / 1000.0;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return -1.0;
     }
 
     /**
      * Reads the Raspberry Pi GPU temperature in °C using vcgencmd.
-     * @return GPU temperature, or -1.0 if unavailable.
+     *
+     * @return GPU temperature in Celsius, or -1.0 if unable to read
      */
     public static double getGpuTemperature() {
         try {
@@ -38,19 +42,21 @@ public class PiUtils {
                     return Double.parseDouble(line);
                 }
             }
-        } catch (IOException | NumberFormatException e) {
-            System.err.println("⚠️ Failed to read GPU temperature: " + e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return -1.0;
     }
 
     /**
-     * Reads the Raspberry Pi fan speed as a percentage of max.
-     * @return fan speed percentage, or -1.0 if unavailable.
+     * Reads the Raspberry Pi fan speed as a percentage of max using sudo tee-friendly method.
+     *
+     * @return fan speed percentage, or -1.0 if unavailable
      */
     public static double getFanPercentage() {
         String curPath = "/sys/class/thermal/cooling_device0/cur_state";
         String maxPath = "/sys/class/thermal/cooling_device0/max_state";
+
         try (BufferedReader curReader = new BufferedReader(new FileReader(curPath));
              BufferedReader maxReader = new BufferedReader(new FileReader(maxPath))) {
 
@@ -62,9 +68,11 @@ public class PiUtils {
                 int max = Integer.parseInt(maxLine.trim());
                 if (max > 0) return (cur / (double) max) * 100.0;
             }
-        } catch (IOException | NumberFormatException e) {
-            System.err.println("⚠️ Failed to read fan speed: " + e.getMessage());
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
         return -1.0;
     }
 }
