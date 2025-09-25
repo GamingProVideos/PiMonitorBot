@@ -1,39 +1,55 @@
 # PiMonitorBot
 
+[![GitHub Release](https://img.shields.io/github/v/release/GamingProVideos/PiMonitorBot?color=green)](https://github.com/GamingProVideos/PiMonitorBot/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 PiMonitorBot is a Discord bot designed to monitor your Raspberry Pi's temperature and automatically report it to a Discord channel. It supports auto-restart, configurable thresholds, and runs as a systemd service.
 
 ---
 
 ## Features
 
-- Monitors CPU temperature on Raspberry Pi.
+- Monitors CPU and GPU temperature on Raspberry Pi.
 - Sends automated updates to a Discord channel.
 - Warns when temperature exceeds a configurable threshold.
+- Allows setting fan speed as a percentage (0–100%), safely mapped to Raspberry Pi fan states.
 - Auto-restarts on crash.
 - Systemd service for running on boot.
 - Easy installation with a single `install.sh`.
 
 ---
 
-## Note for Setting Fan Speed to Run `tee` on the Fan File Without a Password
 
-To allow your bot user to run `tee` on the fan control file without a password:
+[//]: # (## Note for Setting Fan Speed to Run `tee` on the Fan File Without a Password)
 
-1. Open sudoers for editing:
+[//]: # ()
+[//]: # (To allow your bot user to run `tee` on the fan control file without a password:)
 
-    ```bash
-    sudo visudo
-    ```
+[//]: # ()
+[//]: # (1. Open sudoers for editing:)
 
-2. Add this line (replace `pi` with your bot user):
+[//]: # ()
+[//]: # (    ```bash)
 
-    ```
-    pi ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/class/thermal/cooling_device0/cur_state
-    ```
+[//]: # (    sudo visudo)
 
-This avoids running the entire bot as root, which is much safer. The admin role check remains intact.
+[//]: # (    ```)
 
----
+[//]: # ()
+[//]: # (2. Add this line &#40;replace `pi` with your bot user&#41;:)
+
+[//]: # ()
+[//]: # (    ```)
+
+[//]: # (    pi ALL=&#40;ALL&#41; NOPASSWD: /usr/bin/tee /sys/class/thermal/cooling_device0/cur_state)
+
+[//]: # (    ```)
+
+[//]: # ()
+[//]: # (This avoids running the entire bot as root, which is much safer. The admin role check remains intact.)
+
+[//]: # ()
+[//]: # (---)
 
 ## Installation
 
