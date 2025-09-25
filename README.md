@@ -14,18 +14,26 @@ PiMonitorBot is a Discord bot designed to monitor your Raspberry Pi's temperatur
 - Easy installation with a single `install.sh`.
 
 ---
-## Note For Sete Fan speed to run tee on the fan file without a password
 
-You must allow your bot user to run tee on the fan file without a password. Add this in sudoers via:
+## Note for Setting Fan Speed to Run `tee` on the Fan File Without a Password
 
-pi ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/class/thermal/cooling_device0/cur_state
+To allow your bot user to run `tee` on the fan control file without a password:
 
+1. Open sudoers for editing:
 
-Replace pi with your Raspberry Pi username.
+    ```bash
+    sudo visudo
+    ```
 
-This avoids running the entire bot as root, which is much safer.
+2. Add this line (replace `pi` with your bot user):
 
-The admin role check remains intact.
+    ```
+    pi ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/class/thermal/cooling_device0/cur_state
+    ```
+
+This avoids running the entire bot as root, which is much safer. The admin role check remains intact.
+
+---
 
 ## Installation
 
@@ -50,16 +58,3 @@ chmod +x install.sh
 wget https://github.com/GamingProVideos/PiMonitorBot/raw/master/install.sh -O install.sh
 chmod +x install.sh
 ./install.sh
-
-
-To update the bot while keeping your configuration, use the update.sh script:
-
-# Using curl
-curl -sSL https://github.com/GamingProVideos/PiMonitorBot/raw/master/update.sh -o update.sh
-chmod +x update.sh
-./update.sh
-
-# Using wget
-wget https://github.com/GamingProVideos/PiMonitorBot/raw/master/update.sh -O update.sh
-chmod +x update.sh
-./update.sh
