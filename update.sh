@@ -31,6 +31,7 @@ if [[ "$update_config" =~ ^[Yy]$ ]]; then
     read -p "Enter your CHANNEL_ID (leave blank to keep current): " CHANNEL_ID
     read -p "Enter INTERVAL_MINUTES (leave blank to keep current): " INTERVAL_MINUTES
     read -p "Enter WARN_THRESHOLD (leave blank to keep current): " WARN_THRESHOLD
+    read -p "Enter ALLOWED_ROLE_ID (leave blank to keep current): " ALLOWED_ROLE_ID
 
     # Use existing values if left blank
     BOT_TOKEN=${BOT_TOKEN:-$(grep BOT_TOKEN .env | cut -d '=' -f2)}
@@ -38,14 +39,16 @@ if [[ "$update_config" =~ ^[Yy]$ ]]; then
     CHANNEL_ID=${CHANNEL_ID:-$(grep CHANNEL_ID .env | cut -d '=' -f2)}
     INTERVAL_MINUTES=${INTERVAL_MINUTES:-$(grep INTERVAL_MINUTES .env | cut -d '=' -f2)}
     WARN_THRESHOLD=${WARN_THRESHOLD:-$(grep WARN_THRESHOLD .env | cut -d '=' -f2)}
+    ALLOWED_ROLE_ID=${ALLOWED_ROLE_ID:-$(grep ALLOWED_ROLE_ID .env | cut -d '=' -f2)}
 
     # Update .env file
-    cat > .env <<'EOF'
+    cat > .env <<EOF
 BOT_TOKEN=$BOT_TOKEN
 GUILD_ID=$GUILD_ID
 CHANNEL_ID=$CHANNEL_ID
 INTERVAL_MINUTES=$INTERVAL_MINUTES
 WARN_THRESHOLD=$WARN_THRESHOLD
+ALLOWED_ROLE_ID=$ALLOWED_ROLE_ID
 EOF
 
     echo ".env updated."
