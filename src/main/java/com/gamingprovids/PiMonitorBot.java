@@ -38,7 +38,9 @@ public class PiMonitorBot extends ListenerAdapter {
                     SetIntervalCommand.getCommand(),
                     SetWarnCommand.getCommand(),
                     StatusCommand.getCommand(),
-                    CheckUpdateCommand.getCommand()
+                    CheckUpdateCommand.getCommand(),
+                    SetFanCommand.getCommand(),
+                    RebootPiCommand.getCommand()
             ).queue();
         }
 
