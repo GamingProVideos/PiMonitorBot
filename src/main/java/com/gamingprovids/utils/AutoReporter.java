@@ -6,6 +6,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.Message;
 
 import java.awt.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -16,6 +18,14 @@ public class AutoReporter {
 
     public AutoReporter(JDA jda) {
         this.jda = jda;
+    }
+
+    private String getHostName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            return "Unknown Host";
+        }
     }
 
     public void start() {
@@ -29,9 +39,11 @@ public class AutoReporter {
                 double cpuTemp = PiUtils.getCpuTemperature();
                 double gpuTemp = PiUtils.getGpuTemperature();
                 double fanPercent = PiUtils.getFanPercentage();
+                String hostname = getHostName();
 
                 EmbedBuilder embed = new EmbedBuilder()
                         .setTitle("🌡️ Auto Report")
+                        .addField("Hostname", hostname, false)
                         .addField("CPU Temperature", String.format("%.1f °C", cpuTemp), true)
                         .addField("GPU Temperature", String.format("%.1f °C", gpuTemp), true)
                         .addField("Fan Speed", (fanPercent >= 0 ? String.format("%.0f%%", fanPercent) : "Unknown"), true)
