@@ -20,6 +20,9 @@ public class TempCommand extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("temp")) return;
 
+        // Defer reply to avoid timeout
+        event.deferReply(true).queue();
+
         double cpuTemp = PiUtils.getCpuTemperature();
         double gpuTemp = PiUtils.getGpuTemperature();
         double fanPercent = PiUtils.getFanPercentage();
@@ -31,6 +34,6 @@ public class TempCommand extends ListenerAdapter {
                 .addField("Fan Speed", fanPercent >= 0 ? String.format("%.0f%%", fanPercent) : "Unknown", true)
                 .setColor(cpuTemp >= Config.getWarnThreshold() ? Color.RED : Color.GREEN);
 
-        event.replyEmbeds(embed.build()).queue();
+        event.getHook().sendMessageEmbeds(embed.build()).queue();
     }
 }

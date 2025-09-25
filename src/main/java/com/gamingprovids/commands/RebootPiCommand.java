@@ -16,7 +16,7 @@ public class RebootPiCommand extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("rebootpi")) return;
 
-        // Check role
+        // Check admin role
         String allowedRoleId = Config.getAllowedRoleId();
         boolean hasRole = event.getMember() != null &&
                 event.getMember().getRoles().stream().anyMatch(r -> r.getId().equals(allowedRoleId));
@@ -26,10 +26,12 @@ public class RebootPiCommand extends ListenerAdapter {
             return;
         }
 
-        event.reply("♻️ Rebooting Pi...").queue();
+        // Defer reply to allow time for reboot
+        event.deferReply(true).queue(); // ephemeral defer
 
         try {
             Runtime.getRuntime().exec("sudo reboot");
+            event.getHook().sendMessage("♻️ Reboot command sent successfully!").queue();
         } catch (Exception e) {
             event.getHook().sendMessage("❌ Failed to reboot Pi: " + e.getMessage()).queue();
             e.printStackTrace();

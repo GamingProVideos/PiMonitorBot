@@ -18,10 +18,15 @@ public class CheckUpdateCommand extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("checkupdate")) return;
 
+        System.out.println("Slash command triggered: checkupdate");
+
         TextChannel channel = event.getJDA().getTextChannelById(Config.getChannelId());
-        if (channel != null) {
-            new UpdateChecker(event.getJDA()).checkForUpdates();
-            event.reply("🔍 Checking for updates...").setEphemeral(true).queue();
+        if (channel == null) {
+            event.reply("❌ Channel not found!").setEphemeral(true).queue();
+            return;
         }
+
+        new UpdateChecker(event.getJDA()).checkForUpdates();
+        event.reply("🔍 Checking for updates...").setEphemeral(true).queue();
     }
 }

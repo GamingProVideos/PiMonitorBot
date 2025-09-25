@@ -20,27 +20,35 @@ public class SetFanCommand extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("setfan")) return;
 
-        // Check role
+        // Check admin role
         String allowedRoleId = Config.getAllowedRoleId();
         boolean hasRole = event.getMember() != null &&
                 event.getMember().getRoles().stream().anyMatch(r -> r.getId().equals(allowedRoleId));
 
         if (!hasRole) {
-            event.reply("⛔ You don’t have permission to set the fan speed.").setEphemeral(true).queue();
+            event.reply("⛔ You don’t have permission to set the fan speed.")
+                    .setEphemeral(true).queue();
             return;
         }
 
-        int speed = (int) event.getOption("speed").getAsLong();
-        if (speed < 0 || speed > 100) {
-            event.reply("❌ Speed must be between 0 and 100").setEphemeral(true).queue();
+        // Defer reply for safety
+        event.deferReply(true).queue();
+
+        // Get the speed option
+        Integer speedOption = event.getOption("speed") != null ?
+                (int) event.getOption("speed").getAsLong() : null;
+
+        if (speedOption == null || speedOption < 0 || speedOption > 100) {
+            event.getHook().sendMessage("❌ Speed must be between 0 and 100").queue();
             return;
         }
 
         try (FileWriter fw = new FileWriter("/sys/class/thermal/cooling_device0/cur_state")) {
-            fw.write(String.valueOf(speed));
-            event.reply("✅ Fan speed set to " + speed + "%").queue();
+            fw.write(String.valueOf(speedOption));
+            event.getHook().sendMessage("✅ Fan speed set to " + speedOption + "%").queue();
         } catch (Exception e) {
-            event.reply("❌ Failed to set fan speed. Ensure bot has proper permissions.").queue();
+            event.getHook().sendMessage("❌ Failed to set fan speed. Ensure bot has proper permissions.")
+                    .queue();
             e.printStackTrace();
         }
     }

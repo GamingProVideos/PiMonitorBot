@@ -5,29 +5,25 @@ import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-
-import java.awt.*;
 
 public class StatusCommand extends ListenerAdapter {
 
-    // Slash command with optional state and activity arguments
     public static CommandData getCommand() {
         return Commands.slash("status", "Show current settings or change bot status/activity")
                 .addOption(OptionType.STRING, "state", "Change bot status (online, idle, dnd, offline)", false)
-                .addOption(OptionType.STRING, "activity", "Set bot activity text (Playing/Watching/Listening)", false);
+                .addOption(OptionType.STRING, "activity", "Set bot activity text", false);
     }
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("status")) return;
 
-        // Defer reply to avoid 3-second timeout
+        // Defer reply
         event.deferReply(true).queue();
 
-        // Always check if used in a guild
         if (event.getMember() == null) {
             event.getHook().sendMessage("⛔ You must run this command in a server.").queue();
             return;
@@ -36,7 +32,7 @@ public class StatusCommand extends ListenerAdapter {
         String stateArg = event.getOption("state") != null ? event.getOption("state").getAsString().toLowerCase() : null;
         String activityArg = event.getOption("activity") != null ? event.getOption("activity").getAsString() : null;
 
-        // Only users with allowed role can change status/activity
+        // Check role if changing status/activity
         String allowedRoleId = Config.getAllowedRoleId();
         boolean hasRole = event.getMember().getRoles().stream()
                 .anyMatch(r -> r.getId().equals(allowedRoleId));
@@ -46,7 +42,7 @@ public class StatusCommand extends ListenerAdapter {
             return;
         }
 
-        // Change bot presence if stateArg is provided
+        // Update status
         if (stateArg != null) {
             OnlineStatus newStatus;
             switch (stateArg) {
@@ -62,12 +58,12 @@ public class StatusCommand extends ListenerAdapter {
             event.getJDA().getPresence().setStatus(newStatus);
         }
 
-        // Change bot activity if activityArg is provided
+        // Update activity
         if (activityArg != null) {
             event.getJDA().getPresence().setActivity(Activity.playing(activityArg));
         }
 
-        // If no arguments, show current settings
+        // Show current settings if no args
         if (stateArg == null && activityArg == null) {
             String reply = String.format(
                     "**Current Settings**\n" +

@@ -20,15 +20,36 @@ public class SetIntervalCommand extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("setinterval")) return;
 
-        int minutes = event.getOption("minutes").getAsInt();
-        if (minutes >= 1) {
-            Config.setIntervalMinutes(minutes);
-            event.reply("✅ Auto-report interval set to " + minutes + " minutes.").queue();
+        // Check admin role
+        String allowedRoleId = Config.getAllowedRoleId();
+        boolean hasRole = event.getMember() != null &&
+                event.getMember().getRoles().stream().anyMatch(r -> r.getId().equals(allowedRoleId));
 
-            TextChannel channel = event.getJDA().getTextChannelById(Config.getChannelId());
-            if (channel != null) AutoReporter.restart(event.getJDA());
-        } else {
-            event.reply("⚠️ Interval must be at least 1 minute.").setEphemeral(true).queue();
+        if (!hasRole) {
+            event.reply("⛔ You don’t have permission to set the auto-report interval.")
+                    .setEphemeral(true).queue();
+            return;
         }
+
+        // Defer reply for safety
+        event.deferReply(true).queue();
+
+        // Get minutes option
+        Integer minutes = event.getOption("minutes") != null ?
+                event.getOption("minutes").getAsInt() : null;
+
+        if (minutes == null || minutes < 1) {
+            event.getHook().sendMessage("⚠️ Interval must be at least 1 minute.").queue();
+            return;
+        }
+
+        // Set interval in config
+        Config.setIntervalMinutes(minutes);
+
+        // Restart AutoReporter if channel exists
+        TextChannel channel = event.getJDA().getTextChannelById(Config.getChannelId());
+        if (channel != null) AutoReporter.restart(event.getJDA());
+
+        event.getHook().sendMessage("✅ Auto-report interval set to " + minutes + " minutes.").queue();
     }
 }

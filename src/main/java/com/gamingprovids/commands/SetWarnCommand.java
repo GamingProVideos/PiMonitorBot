@@ -18,8 +18,32 @@ public class SetWarnCommand extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("setwarn")) return;
 
-        double threshold = event.getOption("temperature").getAsDouble();
+        // Check admin role
+        String allowedRoleId = Config.getAllowedRoleId();
+        boolean hasRole = event.getMember() != null &&
+                event.getMember().getRoles().stream().anyMatch(r -> r.getId().equals(allowedRoleId));
+
+        if (!hasRole) {
+            event.reply("⛔ You don’t have permission to set the warning threshold.")
+                    .setEphemeral(true).queue();
+            return;
+        }
+
+        // Defer reply
+        event.deferReply(true).queue();
+
+        // Get temperature option
+        Double threshold = event.getOption("temperature") != null ?
+                event.getOption("temperature").getAsDouble() : null;
+
+        if (threshold == null || threshold <= 0) {
+            event.getHook().sendMessage("❌ Threshold must be a positive number.").queue();
+            return;
+        }
+
+        // Set threshold in config
         Config.setWarnThreshold(threshold);
-        event.reply("✅ Warning threshold set to " + threshold + " °C.").queue();
+
+        event.getHook().sendMessage("✅ Warning threshold set to " + threshold + " °C.").queue();
     }
 }
