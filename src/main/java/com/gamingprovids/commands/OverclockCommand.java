@@ -19,17 +19,21 @@ public class OverclockCommand extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("overclock")) return;
 
+        // Defer reply to avoid timeout
         event.deferReply(true).queue();
 
-        double cpuOC = PiUtils.getCpuOverclock(); // In MHz
-        double gpuOC = PiUtils.getGpuOverclock(); // In MHz
+        // Fetch overclock info asynchronously
+        new Thread(() -> {
+            double cpuOC = PiUtils.getCpuOverclock(); // In MHz
+            double gpuOC = PiUtils.getGpuOverclock(); // In MHz
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("⚡ Raspberry Pi Overclock Status")
-                .addField("CPU Overclock", cpuOC > 0 ? String.format("%.0f MHz", cpuOC) : "Unknown", true)
-                .addField("GPU Overclock", gpuOC > 0 ? String.format("%.0f MHz", gpuOC) : "Unknown", true)
-                .setColor(Color.ORANGE);
+            EmbedBuilder embed = new EmbedBuilder()
+                    .setTitle("⚡ Raspberry Pi Overclock Status")
+                    .addField("CPU Overclock", cpuOC > 0 ? String.format("%.0f MHz", cpuOC) : "Unknown", true)
+                    .addField("GPU Overclock", gpuOC > 0 ? String.format("%.0f MHz", gpuOC) : "Unknown", true)
+                    .setColor(Color.ORANGE);
 
-        event.getHook().sendMessageEmbeds(embed.build()).queue();
+            event.getHook().sendMessageEmbeds(embed.build()).queue();
+        }).start();
     }
 }
