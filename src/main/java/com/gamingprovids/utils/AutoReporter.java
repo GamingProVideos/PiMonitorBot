@@ -31,15 +31,24 @@ public class AutoReporter {
             public void run() {
                 double cpuTemp = PiUtils.getCpuTemperature();
                 double gpuTemp = PiUtils.getGpuTemperature();
-                double fanPercent = PiUtils.getFanPercentage();
+                int fanRpm = PiUtils.getFanRpm();
+                int fanMaxRpm = PiUtils.getFanMaxRpm();
+                double fanPercent = FanController.getCurrentPercent();
+
                 String hostname = getHostName();
+                boolean autoFan = FanController.isAuto();
 
                 EmbedBuilder embed = new EmbedBuilder()
                         .setTitle("🌡️ Auto Report")
                         .addField("Hostname", hostname, false)
                         .addField("CPU Temperature", cpuTemp >= 0 ? String.format("%.1f °C", cpuTemp) : "Unknown", true)
                         .addField("GPU Temperature", gpuTemp >= 0 ? String.format("%.1f °C", gpuTemp) : "Unknown", true)
-                        .addField("Fan Speed", fanPercent >= 0 ? String.format("%.0f%%", fanPercent) : "Unknown", true)
+                        .addField("Fan Speed",
+                                fanRpm >= 0 && fanMaxRpm > 0
+                                        ? String.format("%.0f%% (%d RPM)", fanPercent, fanRpm)
+                                        : "Unknown",
+                                true)
+                        .addField("Auto Fan", autoFan ? "✅ Enabled" : "❌ Disabled", true)
                         .setColor(cpuTemp >= Config.getWarnThreshold() ? Color.RED : Color.GREEN);
 
                 if (cpuTemp > 0) {
@@ -58,7 +67,7 @@ public class AutoReporter {
                     }
                 }
 
-                // Check for updates
+                // Optional: check for updates
                 new UpdateChecker(jda).checkForUpdates();
             }
         }, 0, Config.getIntervalMinutes() * 60 * 1000L);

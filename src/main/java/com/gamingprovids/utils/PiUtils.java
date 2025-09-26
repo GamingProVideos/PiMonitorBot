@@ -7,15 +7,9 @@ import java.io.InputStreamReader;
 
 public class PiUtils {
 
-    private PiUtils() {
-        // private constructor to prevent instantiation
-    }
+    private PiUtils() {}
 
-    /**
-     * Reads the Raspberry Pi CPU temperature in °C.
-     *
-     * @return CPU temperature in Celsius, or -1.0 if unable to read
-     */
+    /** Reads CPU temperature in °C */
     public static double getCpuTemperature() {
         String path = "/sys/class/thermal/thermal_zone0/temp";
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
@@ -27,11 +21,7 @@ public class PiUtils {
         return -1.0;
     }
 
-    /**
-     * Reads the Raspberry Pi GPU temperature in °C using vcgencmd.
-     *
-     * @return GPU temperature in Celsius, or -1.0 if unable to read
-     */
+    /** Reads GPU temperature in °C using vcgencmd */
     public static double getGpuTemperature() {
         try {
             Process process = new ProcessBuilder("vcgencmd", "measure_temp").start();
@@ -48,31 +38,62 @@ public class PiUtils {
         return -1.0;
     }
 
-    /**
-     * Reads the Raspberry Pi fan speed as a percentage of max using sudo tee-friendly method.
-     *
-     * @return fan speed percentage, or -1.0 if unavailable
-     */
-    public static double getFanPercentage() {
-        String curPath = "/sys/class/thermal/cooling_device0/cur_state";
-        String maxPath = "/sys/class/thermal/cooling_device0/max_state";
-
-        try (BufferedReader curReader = new BufferedReader(new FileReader(curPath));
-             BufferedReader maxReader = new BufferedReader(new FileReader(maxPath))) {
-
-            String curLine = curReader.readLine();
-            String maxLine = maxReader.readLine();
-
-            if (curLine != null && maxLine != null) {
-                int cur = Integer.parseInt(curLine.trim());
-                int max = Integer.parseInt(maxLine.trim());
-                if (max > 0) return (cur / (double) max) * 100.0;
-            }
-
+    /** Reads current fan RPM */
+    public static int getFanRpm() {
+        String path = "/sys/class/hwmon/hwmon2/fan1_input";
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+            String line = br.readLine();
+            if (line != null) return Integer.parseInt(line.trim());
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return -1;
+    }
 
+    /** Reads max fan RPM (fallback to 5000 if not available) */
+    public static int getFanMaxRpm() {
+        String path = "/sys/class/hwmon/hwmon2/fan1_max";
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+            String line = br.readLine();
+            if (line != null) return Integer.parseInt(line.trim());
+        } catch (IOException e) {
+            // not all hwmon drivers expose fan1_max
+        }
+        return 5000;
+    }
+
+    /** Returns fan speed as a percentage of max RPM */
+    public static double getFanPercentageFromRpm() {
+        int rpm = getFanRpm();
+        int maxRpm = getFanMaxRpm();
+        if (rpm >= 0 && maxRpm > 0) {
+            double percent = (rpm / (double) maxRpm) * 100.0;
+            return Math.max(0, Math.min(percent, 100)); // clamp 0–100%
+        }
         return -1.0;
+    }
+
+    /** Returns CPU frequency in MHz (current overclock) */
+    public static double getCpuOverclock() {
+        try (BufferedReader br = new BufferedReader(new FileReader("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"))) {
+            String line = br.readLine();
+            if (line != null) return Integer.parseInt(line.trim()) / 1000.0; // kHz → MHz
+        } catch (IOException ignored) {}
+        return -1;
+    }
+
+    /** Returns GPU frequency in MHz */
+    public static double getGpuOverclock() {
+        try {
+            Process proc = new ProcessBuilder("vcgencmd", "measure_clock", "core").start();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
+                String line = br.readLine();
+                if (line != null && line.startsWith("frequency(")) {
+                    String value = line.split("=")[1].trim();
+                    return Double.parseDouble(value) / 1_000_000.0; // Hz → MHz
+                }
+            }
+        } catch (IOException ignored) {}
+        return -1;
     }
 }

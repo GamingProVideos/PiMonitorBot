@@ -57,7 +57,8 @@ public class PiMonitorBot extends ListenerAdapter {
                 StatusCommand.getCommand(),
                 CheckUpdateCommand.getCommand(),
                 SetFanCommand.getCommand(),
-                RebootPiCommand.getCommand()
+                RebootPiCommand.getCommand(),
+                OverclockCommand.getCommand()
         ).queue(
                 success -> System.out.println("✅ Commands registered successfully!"),
                 error -> System.err.println("❌ Failed to register commands: " + error.getMessage())
@@ -72,12 +73,20 @@ public class PiMonitorBot extends ListenerAdapter {
         updateChecker.checkForUpdates();
 
         // Update bot activity every 30 seconds
+        // Update bot activity every 30 seconds
         scheduler.scheduleAtFixedRate(() -> {
             double cpuTemp = PiUtils.getCpuTemperature();
             double gpuTemp = PiUtils.getGpuTemperature();
+            double fanPercent = PiUtils.getFanPercentageFromRpm();
+
+            String fanStatus = fanPercent >= 0
+                    ? String.format("Fan: %.0f%%", fanPercent)
+                    : "Fan: Unknown";
+
             event.getJDA().getPresence().setActivity(
-                    Activity.watching(String.format("CPU: %.1f°C | GPU: %.1f°C", cpuTemp, gpuTemp))
+                    Activity.watching(String.format("CPU: %.1f°C | GPU: %.1f°C | %s", cpuTemp, gpuTemp, fanStatus))
             );
         }, 0, 30, TimeUnit.SECONDS);
+
     }
 }
